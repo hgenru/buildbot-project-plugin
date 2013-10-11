@@ -3,27 +3,7 @@ import imp
 import glob
 
 
-class Modifier(object):
-    """Wrapper to set project-specify
-       properties to object
-    """
-    def __init__(self, mod_prop):
-        self.mod_prop = mod_prop
-
-    def __set__(self, obj, value):
-        self.value = value
-
-    def __get__(self, obj, objtype):
-        # TODO: Rewrite this dirty hack
-        return [self.mod_obj(v)
-                for v in self.value]
-
-    def mod_object(self, obj):
-        obj.__dict__.update(self.mod_prop)
-        return obj
-
-
-class ProjectFactory(dict):
+class ProjectFactory(object):
     """Project Factory
     """
     class __metaclass__(type):
@@ -32,15 +12,20 @@ class ProjectFactory(dict):
         def __call__(cls, *args, **kwargs):
             obj = type.__call__(cls, *args, **kwargs)
             cls.__inheritors__.append(obj)
-            obj.__dict__["builders"] = Modifier(
-                {"builddir": os.path.dirname(os.path.realpath(__file__))})
             return obj
 
-    def __getattr__(self, attr):
-        return self[attr]
+    def __getitem__(self, attr):
+        return getattr(self, attr)
 
-    def __setattr__(self, attr, value):
-        self[attr] = value
+    def __setitem__(self, attr, value):
+        self.__setattr__(attr, value)
+
+    def get(self, key, unless):
+        # Not to obstruct descriptor
+        if key in self.__dict__:
+            return getattr(self, key)
+        else:
+            return unless
 
 
 class ProjectLoader(object):
