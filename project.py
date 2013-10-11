@@ -14,17 +14,6 @@ class ProjectFactory(object):
             cls.__inheritors__.append(obj)
             return obj
 
-        # def __inheritors__(cls):
-        #     inheritors = []
-        #     work = [cls]
-        #     while work:
-        #         parent = work.pop()
-        #         for child in parent.__subclasses__():
-        #             if child not in inheritors:
-        #                 inheritors.append(child)
-        #                 work.append(child)
-        #     return inheritors
-
     def __getattr__(self, attr):
         return self[attr]
 
