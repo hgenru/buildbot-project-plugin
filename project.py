@@ -6,12 +6,31 @@ import glob
 class ProjectFactory(object):
     """Project Factory
     """
+    class Wrapper(object):
+        """Wrapper to set project-specify
+           properties to object
+        """
+        def __init__(self, mod_prop):
+            self.mod_prop
+
+        def __set__(self, obj, value):
+            self.value = value
+
+        def __get__(self, obj, objtype):
+            return [self.mod_obj(v)
+                    for v in self.value]
+
+        def mod_object(self, obj):
+            obj.__dict__.update(self.mod_prop)
+            return obj
+
     class __metaclass__(type):
         __inheritors__ = []
 
         def __call__(cls, *args, **kwargs):
             obj = type.__call__(cls, *args, **kwargs)
             cls.__inheritors__.append(obj)
+            obj["builders"] = Wrapper
             return obj
 
     def __getattr__(self, attr):
@@ -46,8 +65,10 @@ class ProjectLoader(object):
                       "builders",
                       "schedulers",
                       "change_source"]
-            (self.config[x].append(project[x])
-             for x in to_add if project.get(x, None))
+            for x in to_add:
+                if project.get(x, None):
+                    self.config[x].append(project[x])
 
         projects = ProjectFactory.__inheritors__
-        (add(p) for p in projects)
+        for p in projects:
+            add(p)
