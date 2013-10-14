@@ -1,4 +1,5 @@
 import os
+import gc
 import imp
 import glob
 
@@ -6,26 +7,23 @@ import glob
 class Project(object):
     """Project Factory
     """
-    class __metaclass__(type):
-        __inheritors__ = []
-
-        def __call__(cls, *args, **kwargs):
-            obj = type.__call__(cls, *args, **kwargs)
-            cls.__inheritors__.append(obj)
-            return obj
-
     def __getitem__(self, attr):
-        return getattr(self, attr)
+        return getattr(self, str(attr))
 
     def __setitem__(self, attr, value):
         self.__setattr__(attr, value)
 
     def get(self, key, unless=None):
         # Not to obstruct descriptor
-        if key in self.__dict__:
-            return getattr(self, key)
-        else:
-            return unless
+        return self.__dict__.get(key, unless)
+
+    @classmethod
+    def get_instances(cls):
+        objects = []
+        for obj in gc.get_objects():
+            if isinstance(obj, cls):
+                objects.append(obj)
+        return objects
 
 
 class ProjectLoader(object):
@@ -60,7 +58,7 @@ class ProjectLoader(object):
                         self.conf[x] = []
                     self.conf[x] += project[x]
 
-        projects = Project.__inheritors__
+        projects = Project.get_instances()
         for p in projects:
             add(p)
 
@@ -72,6 +70,6 @@ def get_builddir_path(
     """Gives an absolute path relative
        to the project configuration file
     """
-    path = os.path.join(
-        os.path.dirname(file_path), data_dir_name, builddir)
+    path = os.path.relpath(os.path.join(
+        os.path.dirname(file_path), data_dir_name, builddir))
     return path
