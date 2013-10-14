@@ -3,7 +3,7 @@ import imp
 import glob
 
 
-class ProjectFactory(object):
+class Project(object):
     """Project Factory
     """
     class __metaclass__(type):
@@ -20,7 +20,7 @@ class ProjectFactory(object):
     def __setitem__(self, attr, value):
         self.__setattr__(attr, value)
 
-    def get(self, key, unless):
+    def get(self, key, unless=None):
         # Not to obstruct descriptor
         if key in self.__dict__:
             return getattr(self, key)
@@ -60,6 +60,18 @@ class ProjectLoader(object):
                         self.conf[x] = []
                     self.conf[x] += project[x]
 
-        projects = ProjectFactory.__inheritors__
+        projects = Project.__inheritors__
         for p in projects:
             add(p)
+
+
+def get_builddir_path(
+        file_path,
+        builddir,
+        data_dir_name="data"):
+    """Gives an absolute path relative
+       to the project configuration file
+    """
+    path = os.path.join(
+        os.path.dirname(file_path), data_dir_name, builddir)
+    return path
