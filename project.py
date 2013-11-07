@@ -2,11 +2,16 @@ import os
 import gc
 import imp
 import glob
+from buildbot.util import safeTranslate
+from buildbot.changes.filter import ChangeFilter
 
 
 class Project(object):
     """Project Factory
     """
+    def __init__(self, name):
+        self.name = name
+
     def __getitem__(self, attr):
         return getattr(self, str(attr))
 
@@ -24,6 +29,19 @@ class Project(object):
             if isinstance(obj, cls):
                 objects.append(obj)
         return objects
+
+    def gen_name(self, *strings):
+        """Returns the generated name based on the give strings
+        """
+        strings = (self.name,) + strings  # To make it clear exactly
+        return safeTranslate("_".join(strings))
+
+    def get_change_filter(self, *args, **kwargs):
+        p_filter = ChangeFilter(
+            *args,
+            projects=safeTranslate(self.name),
+            **kwargs)
+        return p_filter
 
 
 class ProjectLoader(object):
@@ -46,30 +64,26 @@ class ProjectLoader(object):
         return [imp.load_source(convert(m), m) for m in projects_f]
 
     def add_projects_to_config(self):
-        def add(project):
-            to_add = ["slaves",
-                      "status",
-                      "builders",
-                      "schedulers",
-                      "change_source"]
-            for x in to_add:
-                if project.get(x, None):
-                    if not (x in self.conf):
-                        self.conf[x] = []
-                    self.conf[x] += project[x]
+        def _mod_builders(project):
+            for builder in project["builders"]:
+                builddir_name = safeTranslate(
+                    project["name"]) + builder.name
+                builder.builddir = os.path.join(
+                    "build_data", builddir_name)
+        props = {
+            "slaves": None,
+            "status": None,
+            "builders": _mod_builders,
+            "schedulers": None,
+            "change_source": None
+        }
 
         projects = Project.get_instances()
-        for p in projects:
-            add(p)
-
-
-def get_builddir_path(
-        file_path,
-        builddir,
-        data_dir_name="data"):
-    """Gives an absolute path relative
-       to the project configuration file
-    """
-    path = os.path.relpath(os.path.join(
-        os.path.dirname(file_path), data_dir_name, builddir))
-    return path
+        for project in projects:
+            for prop in props.iterkeys():
+                if project.get(prop, None):
+                    if not (prop in self.conf):
+                        self.conf[prop] = []
+                    if props[prop]:
+                        props[prop](project)
+                    self.conf[prop] += project[prop]
