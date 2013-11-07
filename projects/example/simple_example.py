@@ -26,7 +26,7 @@ SU["change_source"].append(
     GitPoller(
         SU.repo_url,
         # Use a field project to separate change source projects (>8.0)
-        project=SU.gen_name("project"),
+        project=SU.gen_name(),
         workdir='.gitpoller-example', branch='master',
         pollinterval=10))
 
@@ -50,12 +50,11 @@ SU["builders"].append(
 
 
 # Sheluders
-project_filter = SU.get_change_filter()
 SU['schedulers'] = []
 SU['schedulers'].append(
     SingleBranchScheduler(
         name=SU.gen_name("scheduler", "auto"),
-        change_filter=project_filter,
+        change_filter=SU.get_change_filter(),
         treeStableTimer=None,
         builderNames=[SU.gen_name("builder")]))
 SU['schedulers'].append(

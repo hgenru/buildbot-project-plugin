@@ -1,9 +1,0 @@
-import imp
-imp.load_source("project", "/home/aplesovskih/Документы/buildbot-ex/project.py")
-
-class PR(project.ProjectFactory):
-    pass
-
-
-class PR2(PR):
-    pass
